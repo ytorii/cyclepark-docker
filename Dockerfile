@@ -1,23 +1,19 @@
 FROM ruby:2.3.4-alpine
 
-RUN sed -i -e 's/v3\.4/edge/g' /etc/apk/repositories
-RUN apk update && apk upgrade && apk add --update --no-cache sqlite-dev nodejs alpine-sdk tzdata udev ttf-freefont 'chromium>59.0' 'chromium-chromedriver>59.0'
+# Rails Setup
+RUN apk update && apk upgrade && apk add --update --no-cache sqlite-dev nodejs tzdata alpine-sdk
 
-RUN mkdir /noto
-ADD NotoSansCJKjp-hinted.zip /noto 
-WORKDIR /noto
-RUN unzip NotoSansCJKjp-hinted.zip && \
-    mkdir -p /usr/share/fonts/noto && \
-    cp *.otf /usr/share/fonts/noto && \
-    chmod 644 -R /usr/share/fonts/noto/ && \
-    fc-cache -fv
-WORKDIR /
-RUN rm -rf /noto
+ENV RAILS_ENV production
+ARG production_secrets_key
+ENV SECRET_KEY_BASE $production_secrets_key
 
 RUN mkdir /app
 WORKDIR /app
+
 ADD Gemfile /app/Gemfile
 ADD Gemfile.lock /app/Gemfile.lock
+
+# Insstalling nokogiri gem
 RUN apk add --no-cache --virtual build-dependencies build-base && \
     apk add --no-cache libxml2-dev libxslt-dev && \
     gem install nokogiri -- --use-system-libraries \
@@ -25,5 +21,14 @@ RUN apk add --no-cache --virtual build-dependencies build-base && \
     --with-xslt-config=/usr/bin/xslt-config && \
     apk del build-dependencies
 RUN bundle config build.nokogiri --use-system-libraries
-RUN bundle install --path vendor/bundle -j4
+RUN bundle install --path vendor/bundle
 ADD . /app
+
+RUN bundle exec rake db:setup
+RUN bundle exec rake assets:precompile
+
+# Nginx Setup
+RUN apk add --update --no-chache nginx
+
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
