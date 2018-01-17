@@ -4,8 +4,6 @@ FROM ruby:2.3.4-alpine
 RUN apk update && apk upgrade && apk add --update --no-cache sqlite-dev nodejs tzdata alpine-sdk
 
 ENV RAILS_ENV production
-ARG production_secrets_key
-ENV SECRET_KEY_BASE $production_secrets_key
 
 RUN mkdir /app
 WORKDIR /app
@@ -21,14 +19,16 @@ RUN apk add --no-cache --virtual build-dependencies build-base && \
     --with-xslt-config=/usr/bin/xslt-config && \
     apk del build-dependencies
 RUN bundle config build.nokogiri --use-system-libraries
-RUN bundle install --path vendor/bundle
+RUN bundle install --path vendor/bundle --without development test
 ADD . /app
 
 RUN bundle exec rake db:setup
 RUN bundle exec rake assets:precompile
 
 # Nginx Setup
-RUN apk add --update --no-chache nginx
-
+RUN apk add --update --no-cache nginx
+# Directory for pid file
+RUN mkdir -p /run/nginx
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
 EXPOSE 80
