@@ -3,6 +3,8 @@ FROM ruby:2.3.4-alpine
 # Rails Setup
 RUN apk update && apk upgrade && apk add --update --no-cache sqlite-dev nodejs tzdata alpine-sdk
 
+ENV RAILS_ENV production
+
 RUN mkdir /app
 WORKDIR /app
 
@@ -23,4 +25,13 @@ ADD . /app
 RUN bundle exec rake db:setup
 RUN bundle exec rake assets:precompile
 
-EXPOSE 3000
+# Nginx Setup
+RUN apk add --update --no-cache nginx
+# Directory for pid file
+RUN mkdir -p /run/nginx
+# Directory for pem files
+RUN mkdir -p /etc/nginx/ssl
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+ADD ssl /etc/nginx/ssl
+
+EXPOSE 80
