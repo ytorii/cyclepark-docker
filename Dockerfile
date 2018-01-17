@@ -6,6 +6,8 @@ RUN apk update && apk upgrade && apk add --update --no-cache sqlite-dev nodejs t
 RUN mkdir /app
 WORKDIR /app
 
+ENV RAILS_ENV production
+
 ADD Gemfile /app/Gemfile
 ADD Gemfile.lock /app/Gemfile.lock
 
