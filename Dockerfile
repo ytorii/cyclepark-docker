@@ -29,6 +29,9 @@ RUN bundle exec rake assets:precompile
 RUN apk add --update --no-cache nginx
 # Directory for pid file
 RUN mkdir -p /run/nginx
+# Directory for pem files
+RUN mkdir -p /etc/nginx/ssl
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
+ADD ssl /etc/nginx/ssl
 
 EXPOSE 80
