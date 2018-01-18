@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: cyclepark-service
+  labels:
+    app: cyclepark
+spec:
+  type : NodePort
+  selector:
+    app: cyclepark
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      nodePort: 30443

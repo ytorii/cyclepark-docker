@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cyclepark
+  labels:
+    app: cyclepark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cyclepark
+  template:
+    metadata:
+      labels:
+        app: cyclepark
+    spec:
+      containers:
+        - image: us.gcr.io/cyclepark-docker/cyclepark_nginx:latest
+          name: frontend
+          ports:
+            - containerPort: 443
+              name: cyclepark-https
+        - image: us.gcr.io/cyclepark-docker/cyclepark_rails:latest
+          name: backend
+          env:
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: cyclepark
+                  key: secret_key_base
+            - name: RAILS_ENV
+              value: "production"
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: sqlite-persistent-storage
+              mountPath: /app/db/dbfiles
+          command: ["/bin/sh"]
+          args: ["-c", "bundle exec rails s -p 3000 -b 0.0.0.0"]
+      volumes:
+        - name: sqlite-persistent-storage
+          gcePersistentDisk:
+            pdName: sqlite-disk
+            fsType: ext4
